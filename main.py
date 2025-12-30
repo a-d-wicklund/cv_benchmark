@@ -9,6 +9,7 @@ import numpy as np
 import time
 import json
 import sys
+import subprocess
 from pathlib import Path
 from typing import Dict, List, Callable
 
@@ -38,6 +39,25 @@ def benchmark_operation(func: Callable, name: str, iterations: int = 10) -> Dict
     }
 
 
+def download_test_image(output_path: str = "test_image.jpg") -> bool:
+    """Download a test image from the internet."""
+    try:
+        print(f"Downloading test image to {output_path}...")
+        result = subprocess.run(
+            ["curl", "-L", "-o", output_path,
+             "https://unsplash.com/photos/8xAA0f9yQnE/download?force=true&w=1920"],
+            capture_output=True,
+            timeout=30
+        )
+        if result.returncode == 0 and Path(output_path).exists():
+            print(f"Successfully downloaded test image")
+            return True
+        return False
+    except Exception as e:
+        print(f"Failed to download image: {e}")
+        return False
+
+
 def create_sample_image(width: int = 1920, height: int = 1080) -> np.ndarray:
     """Create a sample image with various features for testing."""
     print(f"Creating sample image ({width}x{height})...")
@@ -64,13 +84,30 @@ class CVBenchmark:
         self.iterations = iterations
         self.results = []
 
-        if image_path and Path(image_path).exists():
-            print(f"Loading image from {image_path}...")
-            self.img = cv2.imread(image_path)
-            if self.img is None:
-                raise ValueError(f"Failed to load image from {image_path}")
+        # Determine which image to use
+        if image_path:
+            # User specified an image path
+            if not Path(image_path).exists():
+                raise ValueError(f"Specified image not found: {image_path}")
+            target_path = image_path
         else:
-            self.img = create_sample_image()
+            # No image specified - check for test_image.jpg
+            target_path = "test_image.jpg"
+            if not Path(target_path).exists():
+                # Download test image if it doesn't exist
+                if not download_test_image(target_path):
+                    # Download failed - use synthetic image
+                    print("Using synthetic image as fallback")
+                    self.img = create_sample_image()
+                    print(f"Image shape: {self.img.shape}")
+                    print(f"Running {iterations} iterations per operation...\n")
+                    return
+
+        # Load the image
+        print(f"Loading image from {target_path}...")
+        self.img = cv2.imread(target_path)
+        if self.img is None:
+            raise ValueError(f"Failed to load image from {target_path}")
 
         print(f"Image shape: {self.img.shape}")
         print(f"Running {iterations} iterations per operation...\n")
