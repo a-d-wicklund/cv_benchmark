@@ -165,10 +165,8 @@ class CVBenchmark:
         print("\n[2/6] Filtering Operations")
         print("-" * 70)
 
-        kernel_sizes = [3, 5, 9, 15, 21]
-
-        for ksize in kernel_sizes:
-            # Gaussian blur
+        # Gaussian blur - test small and large kernels
+        for ksize in [5, 21]:
             result = benchmark_operation(
                 lambda k=ksize: cv2.GaussianBlur(self.img, (k, k), 0),
                 f"Gaussian Blur (kernel {ksize}x{ksize})",
@@ -177,8 +175,8 @@ class CVBenchmark:
             self.results.append(result)
             print(f"  {result['name']:<50} {result['mean_ms']:>8.2f} ± {result['std_ms']:>6.2f} ms")
 
-        # Bilateral filter (edge-preserving, slower)
-        for ksize in [5, 9, 15]:
+        # Bilateral filter - edge-preserving, computationally expensive
+        for ksize in [5, 15]:
             result = benchmark_operation(
                 lambda k=ksize: cv2.bilateralFilter(self.img, k, 75, 75),
                 f"Bilateral Filter (kernel {ksize}x{ksize})",
@@ -187,8 +185,8 @@ class CVBenchmark:
             self.results.append(result)
             print(f"  {result['name']:<50} {result['mean_ms']:>8.2f} ± {result['std_ms']:>6.2f} ms")
 
-        # Median blur
-        for ksize in [3, 5, 9]:
+        # Median blur - non-linear filter, good for salt-and-pepper noise
+        for ksize in [5, 9]:
             result = benchmark_operation(
                 lambda k=ksize: cv2.medianBlur(self.img, k),
                 f"Median Blur (kernel {ksize}x{ksize})",
@@ -213,15 +211,14 @@ class CVBenchmark:
         self.results.append(result)
         print(f"  {result['name']:<50} {result['mean_ms']:>8.2f} ± {result['std_ms']:>6.2f} ms")
 
-        # Sobel operators
-        for ksize in [3, 5]:
-            result = benchmark_operation(
-                lambda k=ksize: cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=k),
-                f"Sobel X (kernel {ksize}x{ksize})",
-                self.iterations
-            )
-            self.results.append(result)
-            print(f"  {result['name']:<50} {result['mean_ms']:>8.2f} ± {result['std_ms']:>6.2f} ms")
+        # Sobel operator (gradient-based edge detection)
+        result = benchmark_operation(
+            lambda: cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=5),
+            "Sobel X (kernel 5x5)",
+            self.iterations
+        )
+        self.results.append(result)
+        print(f"  {result['name']:<50} {result['mean_ms']:>8.2f} ± {result['std_ms']:>6.2f} ms")
 
         # Harris corner detection
         result = benchmark_operation(
@@ -249,9 +246,8 @@ class CVBenchmark:
         gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
         _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
 
-        kernel_sizes = [3, 5, 9, 15, 21]
-
-        for ksize in kernel_sizes:
+        # Test small and large kernels for basic operations
+        for ksize in [5, 21]:
             kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (ksize, ksize))
 
             # Erosion
@@ -272,7 +268,7 @@ class CVBenchmark:
             self.results.append(result)
             print(f"  {result['name']:<50} {result['mean_ms']:>8.2f} ± {result['std_ms']:>6.2f} ms")
 
-        # Opening and Closing with medium kernel
+        # Compound operations (erosion + dilation)
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))
 
         result = benchmark_operation(
@@ -332,9 +328,8 @@ class CVBenchmark:
         print("\n[6/6] Image Pyramids")
         print("-" * 70)
 
-        # Gaussian pyramid
-        levels = [3, 5, 7]
-        for num_levels in levels:
+        # Gaussian pyramid - test shallow and deep pyramids
+        for num_levels in [3, 7]:
             def build_gaussian_pyramid(n=num_levels):
                 pyramid = [self.img]
                 for _ in range(n):
