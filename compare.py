@@ -29,6 +29,10 @@ class BenchmarkComparison:
         self.meta1 = self.data1['metadata']
         self.meta2 = self.data2['metadata']
 
+        # Create friendly system labels
+        self.system1_label = f"{self.meta1['platform']} ({self.meta1['processor']})"
+        self.system2_label = f"{self.meta2['platform']} ({self.meta2['processor']})"
+
         # Create a mapping of operation name to results
         self.results1 = {r['name']: r for r in self.data1['results']}
         self.results2 = {r['name']: r for r in self.data2['results']}
@@ -37,16 +41,14 @@ class BenchmarkComparison:
         self.common_ops = set(self.results1.keys()) & set(self.results2.keys())
 
         print(f"Loaded results from:")
-        print(f"  System 1: {file1}")
-        print(f"    - Platform: {self.meta1['platform']}")
-        print(f"    - Processor: {self.meta1['processor']}")
-        print(f"    - Python: {self.meta1['python_version']}")
-        print(f"    - OpenCV: {self.meta1['opencv_version']}")
-        print(f"\n  System 2: {file2}")
-        print(f"    - Platform: {self.meta2['platform']}")
-        print(f"    - Processor: {self.meta2['processor']}")
-        print(f"    - Python: {self.meta2['python_version']}")
-        print(f"    - OpenCV: {self.meta2['opencv_version']}")
+        print(f"  System 1: {self.system1_label}")
+        print(f"    File: {file1}")
+        print(f"    Python: {self.meta1['python_version']}")
+        print(f"    OpenCV: {self.meta1['opencv_version']}")
+        print(f"\n  System 2: {self.system2_label}")
+        print(f"    File: {file2}")
+        print(f"    Python: {self.meta2['python_version']}")
+        print(f"    OpenCV: {self.meta2['opencv_version']}")
         print(f"\n  Common operations: {len(self.common_ops)}")
 
     def get_category_operations(self) -> Dict[str, List[str]]:
@@ -195,8 +197,8 @@ class BenchmarkComparison:
         x = np.arange(len(top_ops))
         width = 0.35
 
-        ax.barh(x - width/2, times1, width, label=f'System 1 ({self.meta1["processor"]})', alpha=0.8)
-        ax.barh(x + width/2, times2, width, label=f'System 2 ({self.meta2["processor"]})', alpha=0.8)
+        ax.barh(x - width/2, times1, width, label=self.system1_label, alpha=0.8)
+        ax.barh(x + width/2, times2, width, label=self.system2_label, alpha=0.8)
 
         ax.set_xlabel('Time (ms)')
         ax.set_title('Top 20 Slowest Operations Comparison')
@@ -241,8 +243,8 @@ class BenchmarkComparison:
         x = np.arange(len(cat_names))
         width = 0.35
 
-        ax.bar(x - width/2, cat_times1, width, label=f'System 1', alpha=0.8)
-        ax.bar(x + width/2, cat_times2, width, label=f'System 2', alpha=0.8)
+        ax.bar(x - width/2, cat_times1, width, label=self.system1_label, alpha=0.8)
+        ax.bar(x + width/2, cat_times2, width, label=self.system2_label, alpha=0.8)
 
         ax.set_ylabel('Average Time (ms)')
         ax.set_title('Average Performance by Category')
@@ -267,8 +269,8 @@ class BenchmarkComparison:
         max_val = max(max(log_times1), max(log_times2))
         ax.plot([min_val, max_val], [min_val, max_val], 'r--', linewidth=2, label='Equal performance')
 
-        ax.set_xlabel(f'System 1 Time (log10 ms)')
-        ax.set_ylabel(f'System 2 Time (log10 ms)')
+        ax.set_xlabel(f'{self.system1_label} Time (log10 ms)')
+        ax.set_ylabel(f'{self.system2_label} Time (log10 ms)')
         ax.set_title('Performance Correlation\n(Below line = System2 faster)')
         ax.legend()
         ax.grid(alpha=0.3)
@@ -321,8 +323,8 @@ class BenchmarkComparison:
         x = np.arange(len(all_slow_ops))
         width = 0.35
 
-        ax.barh(x - width/2, times1, width, label='System 1', alpha=0.8, color='#1f77b4')
-        ax.barh(x + width/2, times2, width, label='System 2', alpha=0.8, color='#ff7f0e')
+        ax.barh(x - width/2, times1, width, label=self.system1_label, alpha=0.8, color='#1f77b4')
+        ax.barh(x + width/2, times2, width, label=self.system2_label, alpha=0.8, color='#ff7f0e')
 
         ax.set_xlabel('Time (ms)')
         ax.set_title('Top Slowest Operations (Combined)')
@@ -346,8 +348,8 @@ class BenchmarkComparison:
             x = np.arange(len(ops))
             width = 0.35
 
-            ax.barh(x - width/2, times1, width, label=f'System 1 ({self.meta1["processor"]})', alpha=0.8)
-            ax.barh(x + width/2, times2, width, label=f'System 2 ({self.meta2["processor"]})', alpha=0.8)
+            ax.barh(x - width/2, times1, width, label=self.system1_label, alpha=0.8)
+            ax.barh(x + width/2, times2, width, label=self.system2_label, alpha=0.8)
 
             ax.set_xlabel('Time (ms)')
             ax.set_title(f'{cat_name} - Detailed Comparison')
